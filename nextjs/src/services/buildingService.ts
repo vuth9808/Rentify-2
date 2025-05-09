@@ -1,4 +1,5 @@
 import api from './api';
+import { activityService, ActivityTypes, ItemTypes } from './activityService';
 
 // Types based on Spring Boot API
 export interface BuildingDTO {
@@ -49,7 +50,15 @@ export interface BuildingSearchResponse {
   brokerageFee: number;
 }
 
-// Mock buildings data
+// Hàm lấy dữ liệu từ localStorage hoặc dùng dữ liệu mẫu nếu chưa có
+const getStoredBuildings = (): BuildingSearchResponse[] => {
+  const storedBuildings = localStorage.getItem('rentify_buildings');
+  
+  if (storedBuildings) {
+    return JSON.parse(storedBuildings);
+  }
+  
+  // Mock buildings data nếu không có dữ liệu trong localStorage
 const mockBuildings: BuildingSearchResponse[] = [
   {
     id: 1,
@@ -85,6 +94,24 @@ const mockBuildings: BuildingSearchResponse[] = [
     brokerageFee: 110
   }
 ];
+  
+  // Lưu dữ liệu vào localStorage
+  localStorage.setItem('rentify_buildings', JSON.stringify(mockBuildings));
+  
+  return mockBuildings;
+};
+
+// Hàm lưu dữ liệu vào localStorage
+const saveStoredBuildings = (buildings: BuildingSearchResponse[]) => {
+  localStorage.setItem('rentify_buildings', JSON.stringify(buildings));
+};
+
+// Hàm sinh ID mới
+const generateNewId = (buildings: BuildingSearchResponse[]): number => {
+  if (buildings.length === 0) return 1;
+  const maxId = Math.max(...buildings.map(b => b.id));
+  return maxId + 1;
+};
 
 // Building API functions
 export const buildingService = {
@@ -94,25 +121,62 @@ export const buildingService = {
       const response = await api.get('/api/building', { params: searchParams });
       return response.data;
     } catch (error) {
-      console.log('Using mock building data');
+      console.log('Using local storage data for buildings');
+      
+      // Lấy dữ liệu từ localStorage
+      let buildings = getStoredBuildings();
       
       // Simple filtering based on search params
-      let filteredBuildings = [...mockBuildings];
-      
       if (searchParams) {
         if (searchParams.name) {
-          filteredBuildings = filteredBuildings.filter(b => 
+          buildings = buildings.filter(b => 
             b.name.toLowerCase().includes(searchParams.name!.toLowerCase())
           );
         }
+        
         if (searchParams.district) {
-          filteredBuildings = filteredBuildings.filter(b => 
+          buildings = buildings.filter(b => 
             b.address.toLowerCase().includes(searchParams.district!.toLowerCase())
+          );
+        }
+        
+        // Lọc theo giá thuê từ
+        if (searchParams.rentPriceFrom) {
+          buildings = buildings.filter(b => 
+            b.rentPrice >= searchParams.rentPriceFrom!
+          );
+        }
+        
+        // Lọc theo giá thuê đến
+        if (searchParams.rentPriceTo) {
+          buildings = buildings.filter(b => 
+            b.rentPrice <= searchParams.rentPriceTo!
+          );
+        }
+
+        // Lọc theo diện tích
+        if (searchParams.floorArea) {
+          buildings = buildings.filter(b => 
+            b.floorArea >= searchParams.floorArea!
+          );
+        }
+
+        // Lọc theo tên người quản lý
+        if (searchParams.managerName) {
+          buildings = buildings.filter(b => 
+            b.managerName.toLowerCase().includes(searchParams.managerName!.toLowerCase())
+          );
+        }
+
+        // Lọc theo số điện thoại người quản lý
+        if (searchParams.managerPhone) {
+          buildings = buildings.filter(b => 
+            b.managerPhone.includes(searchParams.managerPhone!)
           );
         }
       }
       
-      return filteredBuildings;
+      return buildings;
     }
   },
 
@@ -122,8 +186,11 @@ export const buildingService = {
       const response = await api.get(`/api/building/${id}`);
       return response.data;
     } catch (error) {
-      console.log('Using mock building detail data');
-      const building = mockBuildings.find(b => b.id === id);
+      console.log('Using local storage data for building details');
+      
+      const buildings = getStoredBuildings();
+      const building = buildings.find(b => b.id === id);
+      
       if (!building) throw new Error('Building not found');
       
       // Convert to more detailed DTO for edit form
@@ -135,8 +202,8 @@ export const buildingService = {
         district: building.address.split(',')[2]?.trim() || '',
         floorArea: building.floorArea,
         rentPrice: building.rentPrice,
-        serviceFee: building.serviceFee,
-        brokerageFee: building.brokerageFee,
+        serviceFee: building.serviceFee.toString(),
+        brokerageFee: building.brokerageFee.toString(),
         managerName: building.managerName,
         managerPhone: building.managerPhone,
         structure: 'Reinforced concrete',
@@ -164,11 +231,83 @@ export const buildingService = {
       const response = await api.post('/api/building', transformedBuilding);
       return response.data;
     } catch (error) {
-      console.log('Using mock save since API call failed');
-      return {
-        ...building,
-        id: building.id || mockBuildings.length + 1
-      };
+      console.log('Using local storage for building save operation');
+      
+      const buildings = getStoredBuildings();
+      const userName = localStorage.getItem('userName') || 'Admin';
+      const userId = Number(localStorage.getItem('userId') || '1');
+      
+      // Đảm bảo các trường bắt buộc có giá trị hợp lệ
+      const serviceFee = parseFloat(building.serviceFee || '0');
+      const brokerageFee = parseFloat(building.brokerageFee || '0');
+      const floorArea = building.floorArea || 0;
+      const rentPrice = building.rentPrice || 0;
+      
+      // Nếu là cập nhật
+      if (building.id) {
+        const index = buildings.findIndex(b => b.id === building.id);
+        
+        if (index !== -1) {
+          // Cập nhật tòa nhà hiện có
+          buildings[index] = {
+            ...buildings[index],
+            name: building.name,
+            address: `${building.street}, ${building.ward}, ${building.district}`,
+            managerName: building.managerName || '',
+            managerPhone: building.managerPhone || '',
+            floorArea: floorArea,
+            rentPrice: rentPrice,
+            serviceFee: serviceFee,
+            brokerageFee: brokerageFee
+          };
+          
+          // Lưu lại vào localStorage
+          saveStoredBuildings(buildings);
+          
+          // Ghi lại hoạt động
+          activityService.addActivity({
+            action: ActivityTypes.UPDATED,
+            itemType: ItemTypes.BUILDING,
+            itemName: building.name,
+            userId: userId,
+            userName: userName
+          });
+          
+          return buildings[index];
+        } else {
+          throw new Error('Building not found');
+        }
+      } else {
+        // Tạo mới tòa nhà
+        const newId = generateNewId(buildings);
+        
+        const newBuilding: BuildingSearchResponse = {
+          id: newId,
+          name: building.name,
+          address: `${building.street}, ${building.ward}, ${building.district}`,
+          managerName: building.managerName || '',
+          managerPhone: building.managerPhone || '',
+          floorArea: floorArea,
+          rentPrice: rentPrice,
+          serviceFee: serviceFee,
+          brokerageFee: brokerageFee
+        };
+        
+        // Thêm vào danh sách và lưu lại
+        buildings.push(newBuilding);
+        saveStoredBuildings(buildings);
+        
+        // Ghi lại hoạt động
+        activityService.addActivity({
+          action: ActivityTypes.CREATED,
+          itemType: ItemTypes.BUILDING,
+          itemName: building.name,
+          userId: userId,
+          userName: userName
+        });
+        
+        return newBuilding;
+      }
     }
   },
 
@@ -193,7 +332,32 @@ export const buildingService = {
         throw new Error('Session expired. Please log in again.');
       }
       
-      console.log('Using mock delete since API call failed');
+      console.log('Using local storage for building delete operation');
+      
+      const buildings = getStoredBuildings();
+      const userName = localStorage.getItem('userName') || 'Admin';
+      const userId = Number(localStorage.getItem('userId') || '1');
+      
+      // Lọc ra các tòa nhà sẽ bị xóa để lưu tên cho hoạt động
+      const buildingsToDelete = buildings.filter(b => ids.includes(b.id));
+      
+      // Lọc ra các tòa nhà không bị xóa
+      const remainingBuildings = buildings.filter(b => !ids.includes(b.id));
+      
+      // Lưu lại danh sách đã lọc
+      saveStoredBuildings(remainingBuildings);
+      
+      // Ghi lại hoạt động xóa cho mỗi tòa nhà
+      buildingsToDelete.forEach(building => {
+        activityService.addActivity({
+          action: ActivityTypes.DELETED,
+          itemType: ItemTypes.BUILDING,
+          itemName: building.name,
+          userId: userId,
+          userName: userName
+        });
+      });
+      
       return { message: 'Buildings deleted successfully' };
     }
   },

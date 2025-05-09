@@ -54,6 +54,20 @@ export default function BuildingsPage() {
     }));
   };
 
+  const handleClearFilters = () => {
+    setSearchParams({
+      name: '',
+      district: '',
+      rentPriceFrom: '',
+      rentPriceTo: '',
+    });
+    // Gọi fetchBuildings để tải lại tất cả dữ liệu
+    setTimeout(fetchBuildings, 0);
+  };
+
+  // Kiểm tra xem có bộ lọc nào được áp dụng không
+  const hasActiveFilters = searchParams.name || searchParams.district || searchParams.rentPriceFrom || searchParams.rentPriceTo;
+
   return (
     <div className="container mx-auto px-6 py-12">
       <h1 className="text-3xl font-bold mb-8">Available Properties</h1>
@@ -110,16 +124,63 @@ export default function BuildingsPage() {
               placeholder="Max price"
             />
           </div>
-          <div className="md:col-span-4">
+          <div className="md:col-span-4 flex gap-3">
             <button
               type="submit"
-              className="w-full md:w-auto bg-blue-900 text-white py-2 px-6 rounded-md hover:bg-blue-800 transition duration-300"
+              className="bg-blue-900 text-white py-2 px-6 rounded-md hover:bg-blue-800 transition duration-300"
             >
               Search
             </button>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="bg-gray-200 text-gray-800 py-2 px-6 rounded-md hover:bg-gray-300 transition duration-300"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
         </form>
       </div>
+
+      {/* Applied Filters */}
+      {hasActiveFilters && (
+        <div className="mb-6">
+          <h3 className="text-lg font-medium text-gray-700 mb-2">Applied Filters:</h3>
+          <div className="flex flex-wrap gap-2">
+            {searchParams.name && (
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                Name: {searchParams.name}
+              </span>
+            )}
+            {searchParams.district && (
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                District: {searchParams.district}
+              </span>
+            )}
+            {searchParams.rentPriceFrom && (
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                Min Price: ${searchParams.rentPriceFrom}
+              </span>
+            )}
+            {searchParams.rentPriceTo && (
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                Max Price: ${searchParams.rentPriceTo}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Results Count */}
+      {!loading && !error && (
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-800">
+            {buildings.length} {buildings.length === 1 ? 'Property' : 'Properties'} Found
+          </h2>
+        </div>
+      )}
 
       {/* Results */}
       {loading ? (
@@ -131,9 +192,17 @@ export default function BuildingsPage() {
           {error}
         </div>
       ) : buildings.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-xl font-medium">No properties found</h3>
-          <p className="text-gray-600 mt-2">Try adjusting your search criteria</p>
+        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <h3 className="text-xl font-medium text-gray-800 mb-2">No properties found</h3>
+          <p className="text-gray-600 mb-6">Try adjusting your search criteria or browse all properties</p>
+          {hasActiveFilters && (
+            <button 
+              onClick={handleClearFilters} 
+              className="bg-blue-900 text-white py-2 px-6 rounded-md hover:bg-blue-800 transition-colors duration-300"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

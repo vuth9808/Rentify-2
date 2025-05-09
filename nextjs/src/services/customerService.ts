@@ -1,4 +1,5 @@
 import api from './api';
+import { activityService, ActivityTypes, ItemTypes } from './activityService';
 
 export interface CustomerDTO {
   id?: number;
@@ -37,7 +38,23 @@ export interface TransactionTypeDTO {
   customerId?: number;
 }
 
-// Mock customers data
+export interface ContactMessage {
+  fullName: string;
+  email: string;
+  customerPhone?: string;
+  note: string;
+  subject?: string;
+}
+
+// Hàm lấy dữ liệu từ localStorage hoặc dùng dữ liệu mẫu nếu chưa có
+const getStoredCustomers = (): CustomerSearchResponse[] => {
+  const storedCustomers = localStorage.getItem('rentify_customers');
+  
+  if (storedCustomers) {
+    return JSON.parse(storedCustomers);
+  }
+  
+  // Mock customers data nếu không có dữ liệu trong localStorage
 const mockCustomers: CustomerSearchResponse[] = [
   {
     id: 1,
@@ -67,6 +84,24 @@ const mockCustomers: CustomerSearchResponse[] = [
     status: 'POTENTIAL'
   }
 ];
+  
+  // Lưu dữ liệu vào localStorage
+  localStorage.setItem('rentify_customers', JSON.stringify(mockCustomers));
+  
+  return mockCustomers;
+};
+
+// Hàm lưu dữ liệu vào localStorage
+const saveStoredCustomers = (customers: CustomerSearchResponse[]) => {
+  localStorage.setItem('rentify_customers', JSON.stringify(customers));
+};
+
+// Hàm sinh ID mới
+const generateNewId = (customers: CustomerSearchResponse[]): number => {
+  if (customers.length === 0) return 1;
+  const maxId = Math.max(...customers.map(c => c.id));
+  return maxId + 1;
+};
 
 // Customer API functions
 export const customerService = {
@@ -76,30 +111,58 @@ export const customerService = {
       const response = await api.get('/api/customer', { params: searchParams });
       return response.data;
     } catch (error) {
-      console.log('Using mock customer data');
+      console.log('Using local storage for customer data');
+      
+      // Lấy dữ liệu từ localStorage
+      let customers = getStoredCustomers();
       
       // Simple filtering based on search params
-      let filteredCustomers = [...mockCustomers];
-      
       if (searchParams) {
         if (searchParams.fullName) {
-          filteredCustomers = filteredCustomers.filter(c => 
+          customers = customers.filter(c => 
             c.fullName.toLowerCase().includes(searchParams.fullName!.toLowerCase())
           );
         }
         if (searchParams.phone) {
-          filteredCustomers = filteredCustomers.filter(c => 
+          customers = customers.filter(c => 
             c.phone.includes(searchParams.phone!)
           );
         }
         if (searchParams.email) {
-          filteredCustomers = filteredCustomers.filter(c => 
+          customers = customers.filter(c => 
             c.email.toLowerCase().includes(searchParams.email!.toLowerCase())
           );
         }
       }
       
-      return filteredCustomers;
+      return customers;
+    }
+  },
+
+  // Get a customer by ID
+  getCustomerById: async (id: number) => {
+    try {
+      const response = await api.get(`/api/customer/${id}`);
+      return response.data;
+    } catch (error) {
+      console.log('Using local storage for customer details');
+      
+      const customers = getStoredCustomers();
+      const customer = customers.find(c => c.id === id);
+      
+      if (!customer) throw new Error('Customer not found');
+      
+      return {
+        id: customer.id,
+        fullName: customer.fullName,
+        phone: customer.phone,
+        email: customer.email,
+        demand: customer.demand,
+        requirement: customer.requirement,
+        status: customer.status,
+        company: 'Sample Company',
+        note: 'Sample note about the customer'
+      };
     }
   },
 
@@ -109,12 +172,73 @@ export const customerService = {
       const response = await api.post('/api/customer', customer);
       return response.data;
     } catch (error) {
-      console.log('Using mock save since API call failed');
-      return {
-        ...customer,
-        id: customer.id || mockCustomers.length + 1,
+      console.log('Using local storage for customer save operation');
+      
+      const customers = getStoredCustomers();
+      const userName = localStorage.getItem('userName') || 'Admin';
+      const userId = Number(localStorage.getItem('userId') || '1');
+      
+      // Nếu là cập nhật
+      if (customer.id) {
+        const index = customers.findIndex(c => c.id === customer.id);
+        
+        if (index !== -1) {
+          // Cập nhật khách hàng hiện có
+          customers[index] = {
+            ...customers[index],
+            fullName: customer.fullName,
+            phone: customer.phone,
+            email: customer.email,
+            demand: customer.demand || customers[index].demand,
+            requirement: customer.requirement || customers[index].requirement,
+            status: customer.status || customers[index].status
+          };
+          
+          // Lưu lại vào localStorage
+          saveStoredCustomers(customers);
+          
+          // Ghi lại hoạt động
+          activityService.addActivity({
+            action: ActivityTypes.UPDATED,
+            itemType: ItemTypes.CUSTOMER,
+            itemName: customer.fullName,
+            userId: userId,
+            userName: userName
+          });
+          
+          return customers[index];
+        } else {
+          throw new Error('Customer not found');
+        }
+      } else {
+        // Tạo mới khách hàng
+        const newId = generateNewId(customers);
+        
+        const newCustomer: CustomerSearchResponse = {
+          id: newId,
+          fullName: customer.fullName,
+          phone: customer.phone,
+          email: customer.email,
+          demand: customer.demand || '',
+          requirement: customer.requirement || '',
         status: customer.status || 'LEAD'
       };
+        
+        // Thêm vào danh sách và lưu lại
+        customers.push(newCustomer);
+        saveStoredCustomers(customers);
+        
+        // Ghi lại hoạt động
+        activityService.addActivity({
+          action: ActivityTypes.CREATED,
+          itemType: ItemTypes.CUSTOMER,
+          itemName: customer.fullName,
+          userId: userId,
+          userName: userName
+        });
+        
+        return newCustomer;
+      }
     }
   },
 
@@ -124,7 +248,32 @@ export const customerService = {
       const response = await api.delete(`/api/customer/${ids.join(',')}`);
       return response.data;
     } catch (error) {
-      console.log('Using mock delete since API call failed');
+      console.log('Using local storage for customer delete operation');
+      
+      const customers = getStoredCustomers();
+      const userName = localStorage.getItem('userName') || 'Admin';
+      const userId = Number(localStorage.getItem('userId') || '1');
+      
+      // Lọc ra các khách hàng sẽ bị xóa để lưu tên cho hoạt động
+      const customersToDelete = customers.filter(c => ids.includes(c.id));
+      
+      // Lọc ra các khách hàng không bị xóa
+      const remainingCustomers = customers.filter(c => !ids.includes(c.id));
+      
+      // Lưu lại danh sách đã lọc
+      saveStoredCustomers(remainingCustomers);
+      
+      // Ghi lại hoạt động xóa cho mỗi khách hàng
+      customersToDelete.forEach(customer => {
+        activityService.addActivity({
+          action: ActivityTypes.DELETED,
+          itemType: ItemTypes.CUSTOMER,
+          itemName: customer.fullName,
+          userId: userId,
+          userName: userName
+        });
+      });
+      
       return { message: 'Customers deleted successfully' };
     }
   },
@@ -173,6 +322,41 @@ export const customerService = {
     } catch (error) {
       console.log('Using mock transaction detail since API call failed');
       return [];
+    }
+  },
+
+  // Send contact message
+  sendContactMessage: async (contactMessage: ContactMessage) => {
+    try {
+      const response = await api.post('/lien-he', contactMessage);
+      return response.data;
+    } catch (error) {
+      console.log('Using local storage for contact message');
+      
+      // Lưu tin nhắn vào localStorage để xem sau
+      const contactMessages = JSON.parse(localStorage.getItem('rentify_contact_messages') || '[]');
+      const newMessage = {
+        id: contactMessages.length + 1,
+        ...contactMessage,
+        createdAt: new Date().toISOString()
+      };
+      
+      contactMessages.push(newMessage);
+      localStorage.setItem('rentify_contact_messages', JSON.stringify(contactMessages));
+      
+      // Ghi lại hoạt động
+      const userName = localStorage.getItem('userName') || 'Guest';
+      const userId = Number(localStorage.getItem('userId') || '0');
+      
+      activityService.addActivity({
+        action: ActivityTypes.CONTACTED,
+        itemType: ItemTypes.MESSAGE,
+        itemName: contactMessage.subject || 'Contact Message',
+        userId: userId,
+        userName: userName
+      });
+      
+      return newMessage;
     }
   }
 };

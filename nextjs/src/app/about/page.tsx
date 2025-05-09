@@ -44,7 +44,14 @@ export default function AboutPage() {
             <div className="relative h-80 w-full rounded-lg overflow-hidden shadow-xl">
               <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
                 {/* Replace with actual image when available */}
-                <div className="text-gray-400 text-lg">Our Office Image</div>
+                {/* <div className="text-gray-400 text-lg">Our Office Image</div> */}
+                <Image
+              src="/images/buildings/building8.jpg"
+              alt="Contact background"
+              fill
+              style={{ objectFit: "cover" }}
+              priority
+            />
               </div>
             </div>
           </div>

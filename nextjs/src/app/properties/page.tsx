@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { buildingService, BuildingSearchResponse } from '@/services/buildingService';
+import { buildingService, BuildingSearchResponse, BuildingSearchRequest } from '@/services/buildingService';
 
 export default function PropertiesPage() {
   const [buildings, setBuildings] = useState<BuildingSearchResponse[]>([]);
@@ -23,7 +23,17 @@ export default function PropertiesPage() {
   const fetchBuildings = async () => {
     try {
       setLoading(true);
-      const data = await buildingService.getBuildings();
+      
+      // Tạo đối tượng tìm kiếm từ searchParams
+      const searchRequest: BuildingSearchRequest = {};
+      
+      if (searchParams.name) searchRequest.name = searchParams.name;
+      if (searchParams.district) searchRequest.district = searchParams.district;
+      if (searchParams.rentPriceFrom) searchRequest.rentPriceFrom = Number(searchParams.rentPriceFrom);
+      if (searchParams.rentPriceTo) searchRequest.rentPriceTo = Number(searchParams.rentPriceTo);
+      
+      // Gọi service với tham số tìm kiếm
+      const data = await buildingService.getBuildings(searchRequest);
       setBuildings(data);
       setError(null);
     } catch (err) {
@@ -54,6 +64,8 @@ export default function PropertiesPage() {
       rentPriceFrom: '',
       rentPriceTo: ''
     });
+    // Gọi fetchBuildings để tải lại tất cả dữ liệu
+    setTimeout(fetchBuildings, 0);
   };
 
   return (
@@ -220,7 +232,7 @@ export default function PropertiesPage() {
               <div key={building.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
                 <div className="h-56 bg-gray-300 relative">
                   <Image
-                    src={`/images/buildings/building${building.id % 3 + 1}.svg`}
+                     src="/images/buildings/building2.jpg"
                     alt={building.name}
                     fill
                     style={{ objectFit: "cover" }}
@@ -249,20 +261,12 @@ export default function PropertiesPage() {
                     </span>
                   </div>
                   
-                  <div className="pt-4 border-t border-gray-100">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm text-gray-500">Manager: {building.managerName}</p>
-                        <p className="text-sm text-gray-500">Phone: {building.managerPhone}</p>
-                      </div>
                       <Link 
                         href={`/properties/${building.id}`}
-                        className="bg-blue-900 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors duration-300 text-sm"
+                    className="block w-full text-center bg-blue-900 text-white py-2 px-4 rounded hover:bg-blue-800 transition-colors duration-300"
                       >
                         View Details
                       </Link>
-                    </div>
-                  </div>
                 </div>
               </div>
             ))}

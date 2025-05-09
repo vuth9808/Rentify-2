@@ -60,14 +60,14 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with improved animation */}
       <div className="relative bg-blue-900 text-white py-20 overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden opacity-30">
+        <div className="absolute inset-0 overflow-hidden ">
           <motion.div
-            initial={{ scale: 1.1, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.2 }}
+            initial={{ scale: 1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.5 }}
             transition={{ duration: 1.5 }}
           >
             <Image
-              src="/images/buildings/building2.svg"
+              src="/images/buildings/building3.jpg"
               alt="Contact background"
               fill
               style={{ objectFit: "cover" }}
@@ -89,11 +89,11 @@ export default function ContactPage() {
           </motion.div>
         </div>
         {/* Custom wave divider */}
-        <div className="absolute bottom-0 left-0 right-0">
+        {/* <div className="absolute bottom-0 left-0 right-0">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="w-full">
             <path fill="#f9fafb" fillOpacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,128C672,128,768,160,864,160C960,160,1056,128,1152,106.7C1248,85,1344,75,1392,69.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
           </svg>
-        </div>
+        </div> */}
       </div>
 
       {/* Contact Form & Info Section */}

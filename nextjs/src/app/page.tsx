@@ -46,14 +46,14 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       {/* Hero Section with improved animation */}
       <section className="relative h-[85vh] flex items-center justify-center bg-gradient-to-r from-blue-900 to-blue-700 text-white overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden opacity-30">
+        <div className="absolute inset-0 overflow-hidden">
           <motion.div
-            initial={{ scale: 1.1, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.2 }}
+            initial={{ scale: 1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.5 }}
             transition={{ duration: 1.5 }}
           >
             <Image
-              src="/images/buildings/building1.svg"
+              src="/images/buildings/building1.jpg"
               alt="City skyline"
               fill
               style={{ objectFit: "cover" }}
@@ -155,7 +155,7 @@ export default function Home() {
                 >
                   <div className="h-56 bg-gray-300 relative overflow-hidden">
                     <Image
-                      src={`/images/buildings/building${property.id % 3 + 1}.svg`}
+                      src="/images/buildings/building2.jpg"
                       alt={property.name}
                       fill
                       style={{ objectFit: "cover" }}
@@ -340,6 +340,7 @@ export default function Home() {
 
       {/* Call to Action Section */}
       <section className="py-16 bg-blue-900 text-white">
+        
         <div className="container mx-auto px-6">
           <motion.div 
             className="max-w-3xl mx-auto text-center"
@@ -347,6 +348,7 @@ export default function Home() {
             animate={isVisible ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
+            
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Find Your Perfect Rental?</h2>
             <p className="text-xl text-blue-100 mb-8">
               Join thousands of satisfied users who have found their ideal property with Rentify.
