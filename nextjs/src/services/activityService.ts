@@ -1,7 +1,7 @@
 import api from './api';
-import { customerService } from './customerService';
-import { buildingService } from './buildingService';
-import { userService } from './userService';
+import { customerService, CustomerSearchResponse } from './customerService';
+import { buildingService, BuildingSearchResponse } from './buildingService';
+import { userService, UserDTO } from './userService';
 
 export interface Activity {
   id: number;
@@ -51,7 +51,7 @@ const generateRealActivities = async (): Promise<Activity[]> => {
     let id = 1;
 
     // Tạo hoạt động cho buildings
-    buildings.forEach((building: any, index: number) => {
+    buildings.forEach((building: BuildingSearchResponse, index: number) => {
       // Chọn user ngẫu nhiên
       const user = users[Math.floor(Math.random() * users.length)];
       
@@ -70,7 +70,7 @@ const generateRealActivities = async (): Promise<Activity[]> => {
     });
     
     // Tạo hoạt động cho customers
-    customers.forEach((customer: any, index: number) => {
+    customers.forEach((customer: CustomerSearchResponse, index: number) => {
       const user = users[Math.floor(Math.random() * users.length)];
       
       activities.push({
@@ -87,8 +87,8 @@ const generateRealActivities = async (): Promise<Activity[]> => {
     });
     
     // Tạo hoạt động cho users
-    users.forEach((user: any, index: number) => {
-      const adminUser = users.find((u: any) => u.role === 'ADMIN') || users[0];
+    users.forEach((user: UserDTO, index: number) => {
+      const adminUser = users.find((u: UserDTO) => u.role === 'ADMIN') || users[0];
       
       activities.push({
         id: id++,
@@ -126,9 +126,7 @@ const generateRealActivities = async (): Promise<Activity[]> => {
     mockActivities = sortedActivities;
     return sortedActivities;
     
-  } catch (error) {
-    console.error('Error generating real activity data:', error);
-    
+  } catch {
     // Fallback to mock data
     return createBasicMockActivities();
   }
@@ -201,7 +199,7 @@ export const activityService = {
       // Thử gọi API thực tế
       const response = await api.get('/api/activities', { params: { limit } });
       return response.data;
-    } catch (error) {
+    } catch {
       // Nếu API không hoạt động, sử dụng dữ liệu thực tế từ các service khác
       const activities = await generateRealActivities();
       
@@ -219,7 +217,7 @@ export const activityService = {
     try {
       const response = await api.post('/api/activities', activity);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using mock add activity since API call failed');
       
       // Tạo một bản ghi hoạt động mới
@@ -242,7 +240,7 @@ export const activityService = {
     try {
       const response = await api.get(`/api/activities/type/${itemType}`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using realistic activity data for item type');
       
       // Lọc và trả về dữ liệu cho loại đối tượng cụ thể
@@ -258,7 +256,7 @@ export const activityService = {
     try {
       const response = await api.get(`/api/activities/user/${userId}`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using realistic activity data for user');
       
       // Lọc và trả về dữ liệu cho người dùng cụ thể

@@ -5,15 +5,29 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { customerService, CustomerDTO } from '@/services/customerService';
 
-export default function EditCustomerPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default function EditCustomerPage({ params }: PageProps) {
   const router = useRouter();
-  const customerId = parseInt(params.id);
+  const [customerId, setCustomerId] = useState<number>(0);
   
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setCustomerId(parseInt(resolvedParams.id));
+    };
+    getParams();
+  }, [params]);
+
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
   const [formData, setFormData] = useState<CustomerDTO>({
+    id: customerId,
     fullName: '',
     phone: '',
     email: '',
@@ -25,34 +39,29 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
   });
 
   useEffect(() => {
-    async function fetchCustomer() {
+    if (customerId === 0) return;
+
+    const fetchCustomer = async () => {
       try {
-        setLoading(true);
-        // In a real app, you'd have a specific endpoint to get a customer by ID
-        // For now, we'll get all customers and filter to find the one we want
-        const customers = await customerService.getCustomers();
-        const customer = customers.find((c: any) => c.id === customerId);
-        
-        if (!customer) {
-          throw new Error('Customer not found');
-        }
-        
-        setFormData(customer);
+        const data = await customerService.getCustomerById(customerId);
+        setFormData({
+          ...data,
+          id: customerId
+        });
         setError(null);
-      } catch (err: any) {
-        console.error('Error fetching customer:', err);
-        setError('Failed to load customer data. ' + err.message);
+      } catch (err: unknown) {
+        console.error('Failed to fetch customer:', err);
+        const error = err as Error;
+        setError('Không thể tải thông tin khách hàng. ' + (error.message || 'Vui lòng thử lại sau.'));
       } finally {
         setLoading(false);
       }
-    }
+    };
 
-    if (customerId) {
-      fetchCustomer();
-    }
+    fetchCustomer();
   }, [customerId]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -62,18 +71,18 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
+    setSaving(true);
     setError(null);
 
     try {
       await customerService.saveCustomer(formData);
-      alert('Customer updated successfully');
       router.push('/admin/customers');
-    } catch (err: any) {
-      console.error('Error updating customer:', err);
-      setError(err.message || 'Failed to update customer. Please try again.');
-    } finally {
-      setSubmitting(false);
+      router.refresh();
+    } catch (err: unknown) {
+      console.error('Failed to update customer:', err);
+      const error = err as Error;
+      setError('Không thể cập nhật khách hàng. ' + (error.message || 'Vui lòng thử lại sau.'));
+      setSaving(false);
     }
   };
 
@@ -88,136 +97,141 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Edit Customer</h1>
+        <h1 className="text-2xl font-bold">Chỉnh sửa khách hàng: {formData.fullName}</h1>
         <Link
           href="/admin/customers"
-          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition duration-300"
+          className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-300"
         >
-          Back to Customers
+          Quay lại
         </Link>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        {error && (
-          <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+          <p>{error}</p>
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit}>
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name *
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                Họ và tên <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                id="fullName"
                 name="fullName"
                 value={formData.fullName}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone *
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                Số điện thoại <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                id="phone"
                 name="phone"
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
+                id="email"
                 name="email"
                 value={formData.email}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Company
+              <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+                Công ty
               </label>
               <input
                 type="text"
+                id="company"
                 name="company"
                 value={formData.company || ''}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Demand
+              <label htmlFor="demand" className="block text-sm font-medium text-gray-700 mb-1">
+                Nhu cầu
               </label>
               <input
                 type="text"
+                id="demand"
                 name="demand"
                 value={formData.demand || ''}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., Office space, Commercial space"
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+              <label htmlFor="requirement" className="block text-sm font-medium text-gray-700 mb-1">
+                Yêu cầu
+              </label>
+              <input
+                type="text"
+                id="requirement"
+                name="requirement"
+                value={formData.requirement || ''}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                Trạng thái
               </label>
               <select
+                id="status"
                 name="status"
                 value={formData.status || 'LEAD'}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="LEAD">Lead</option>
-                <option value="POTENTIAL">Potential</option>
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
+                <option value="POTENTIAL">Tiềm năng</option>
+                <option value="ACTIVE">Đang hoạt động</option>
+                <option value="INACTIVE">Không hoạt động</option>
               </select>
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Requirements
+              <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
+                Ghi chú
               </label>
               <textarea
-                name="requirement"
-                value={formData.requirement || ''}
-                onChange={handleChange}
-                rows={3}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Customer's specific requirements"
-              ></textarea>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notes
-              </label>
-              <textarea
+                id="note"
                 name="note"
                 value={formData.note || ''}
-                onChange={handleChange}
-                rows={3}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Additional notes about the customer"
-              ></textarea>
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
           </div>
 
@@ -225,18 +239,16 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
             <button
               type="button"
               onClick={() => router.push('/admin/customers')}
-              className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition duration-300 mr-2"
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md mr-4 hover:bg-gray-400 transition duration-300"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className={`bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 ${
-                submitting ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
+              disabled={saving}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 disabled:opacity-50"
             >
-              {submitting ? 'Saving...' : 'Update Customer'}
+              {saving ? 'Đang lưu...' : 'Cập nhật khách hàng'}
             </button>
           </div>
         </form>

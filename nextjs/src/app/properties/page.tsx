@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { buildingService, BuildingSearchResponse, BuildingSearchRequest } from '@/services/buildingService';
@@ -16,11 +16,7 @@ export default function PropertiesPage() {
     rentPriceTo: ''
   });
 
-  useEffect(() => {
-    fetchBuildings();
-  }, []);
-
-  const fetchBuildings = async () => {
+  const fetchBuildings = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -36,13 +32,17 @@ export default function PropertiesPage() {
       const data = await buildingService.getBuildings(searchRequest);
       setBuildings(data);
       setError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch buildings:', err);
       setError('Failed to load properties. Please try again later.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchBuildings();
+  }, [fetchBuildings]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

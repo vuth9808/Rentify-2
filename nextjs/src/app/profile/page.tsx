@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { userService } from '@/services/userService';
+import Link from 'next/link';
 
 // Định nghĩa interface cho thông tin người dùng
 interface UserProfile {
@@ -34,19 +35,7 @@ export default function ProfilePage() {
   });
   const [activeTab, setActiveTab] = useState('profile');
 
-  useEffect(() => {
-    // Kiểm tra xem người dùng đã đăng nhập chưa
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    // Lấy thông tin người dùng
-    fetchUserProfile();
-  }, [router]);
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
       const userData = await userService.getCurrentUser();
@@ -84,7 +73,19 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    // Lấy thông tin người dùng
+    fetchUserProfile();
+  }, [router, fetchUserProfile]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -375,7 +376,7 @@ export default function ProfilePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
                     <p className="mb-4">Bạn chưa có bất động sản nào trong danh sách yêu thích.</p>
-                    <a href="/properties" className="text-blue-900 hover:underline">Khám phá bất động sản</a>
+                    <Link href="/properties" className="text-blue-900 hover:underline">Khám phá bất động sản</Link>
                   </div>
                 </div>
               )}
@@ -388,7 +389,7 @@ export default function ProfilePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <p className="mb-4">Bạn chưa xem bất động sản nào gần đây.</p>
-                    <a href="/properties" className="text-blue-900 hover:underline">Khám phá bất động sản</a>
+                    <Link href="/properties" className="text-blue-900 hover:underline">Khám phá bất động sản</Link>
                   </div>
                 </div>
               )}

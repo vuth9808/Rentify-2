@@ -57,9 +57,10 @@ export default function AddBuildingPage() {
       await buildingService.saveBuilding(buildingToSave);
       router.push('/admin/buildings');
       router.refresh();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to add building:', err);
-      setError('Không thể thêm tòa nhà. Vui lòng thử lại sau.');
+      const error = err as Error;
+      setError('Không thể thêm tòa nhà. ' + (error.message || 'Vui lòng thử lại sau.'));
       setLoading(false);
     }
   };

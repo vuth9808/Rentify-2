@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { customerService, CustomerDTO } from '@/services/customerService';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 export default function AddCustomerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -38,9 +47,10 @@ export default function AddCustomerPage() {
       await customerService.saveCustomer(formData);
       alert('Customer created successfully');
       router.push('/admin/customers');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating customer:', err);
-      setError(err.message || 'Failed to create customer. Please try again.');
+      const error = err as ApiError;
+      setError(error.response?.data?.message || error.message || 'Failed to create customer. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { customerService, CustomerSearchResponse, CustomerSearchRequest } from '@/services/customerService';
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<CustomerSearchResponse[]>([]);
@@ -15,11 +24,7 @@ export default function AdminCustomersPage() {
     email: '',
   });
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       const data = await customerService.getCustomers(searchParams);
@@ -32,7 +37,11 @@ export default function AdminCustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,17 +82,18 @@ export default function AdminCustomersPage() {
         await customerService.deleteCustomers(selectedCustomers);
         alert('Customers deleted successfully');
         fetchCustomers();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to delete customers:', err);
+        const error = err as ApiError;
         
         // Handle authentication errors
-        if (err.message && err.message.includes('Session expired')) {
+        if (error.message && error.message.includes('Session expired')) {
           alert('Your session has expired. You will be redirected to the login page.');
           window.location.href = '/login';
           return;
         }
         
-        alert('Failed to delete customers. Please try again later.');
+        alert(error.response?.data?.message || error.message || 'Failed to delete customers. Please try again later.');
       }
     }
   };
@@ -259,17 +269,18 @@ export default function AdminCustomersPage() {
                                   alert('Customer deleted successfully');
                                   fetchCustomers();
                                 })
-                                .catch((err: any) => {
+                                .catch((err: unknown) => {
                                   console.error('Failed to delete customer:', err);
+                                  const error = err as ApiError;
                                   
                                   // Handle authentication errors
-                                  if (err.message && err.message.includes('Session expired')) {
+                                  if (error.message && error.message.includes('Session expired')) {
                                     alert('Your session has expired. You will be redirected to the login page.');
                                     window.location.href = '/login';
                                     return;
                                   }
                                   
-                                  alert('Failed to delete customer');
+                                  alert(error.response?.data?.message || error.message || 'Failed to delete customer');
                                 });
                             }
                           }}

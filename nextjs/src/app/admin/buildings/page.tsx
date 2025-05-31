@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { buildingService, BuildingSearchResponse } from '@/services/buildingService';
 
@@ -14,24 +14,25 @@ export default function AdminBuildingsPage() {
     district: '',
   });
 
-  useEffect(() => {
-    fetchBuildings();
-  }, []);
-
-  const fetchBuildings = async () => {
+  const fetchBuildings = useCallback(async () => {
     try {
       setLoading(true);
       const data = await buildingService.getBuildings(searchParams);
       setBuildings(data);
       setError(null);
       setSelectedBuildings([]);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch buildings:', err);
-      setError('Failed to load buildings. Please try again later.');
+      const error = err as Error;
+      setError('Failed to load buildings. ' + (error.message || 'Please try again later.'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchBuildings();
+  }, [fetchBuildings]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,11 +73,11 @@ export default function AdminBuildingsPage() {
         await buildingService.deleteBuildings(selectedBuildings);
         alert('Buildings deleted successfully');
         fetchBuildings();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to delete buildings:', err);
         
         // Handle authentication errors
-        if (err.message && err.message.includes('Session expired')) {
+        if (err instanceof Error && err.message.includes('Session expired')) {
           alert('Your session has expired. You will be redirected to the login page.');
           // Redirect to login page
           window.location.href = '/login';
@@ -234,11 +235,11 @@ export default function AdminBuildingsPage() {
                                   alert('Building deleted successfully');
                                   fetchBuildings();
                                 })
-                                .catch((err: any) => {
+                                .catch((err: Error | unknown) => {
                                   console.error('Failed to delete building:', err);
                                   
                                   // Handle authentication errors
-                                  if (err.message && err.message.includes('Session expired')) {
+                                  if (err instanceof Error && err.message.includes('Session expired')) {
                                     alert('Your session has expired. You will be redirected to the login page.');
                                     // Redirect to login page
                                     window.location.href = '/login';

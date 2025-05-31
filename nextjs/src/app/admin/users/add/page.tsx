@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userService, UserDTO } from '@/services/userService';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 export default function AddUserPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -45,9 +54,10 @@ export default function AddUserPage() {
       await userService.saveUser(formData);
       alert('User created successfully');
       router.push('/admin/users');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating user:', err);
-      setError(err.message || 'Failed to create user. Please try again.');
+      const error = err as ApiError;
+      setError(error.response?.data?.message || error.message || 'Failed to create user. Please try again.');
     } finally {
       setLoading(false);
     }

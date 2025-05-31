@@ -5,85 +5,82 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userService, UserDTO } from '@/services/userService';
 
-export default function EditUserPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default function EditUserPage({ params }: PageProps) {
   const router = useRouter();
-  const userId = parseInt(params.id);
+  const [userId, setUserId] = useState<number>(0);
   
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setUserId(parseInt(resolvedParams.id));
+    };
+    getParams();
+  }, [params]);
+
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
   const [formData, setFormData] = useState<UserDTO>({
+    id: 0,
     userName: '',
     fullName: '',
     email: '',
     phone: '',
-    address: '',
-    roleCode: ['USER']
+    role: 'USER',
+    status: 1
   });
 
   useEffect(() => {
-    async function fetchUser() {
+    if (userId === 0) return;
+
+    const fetchUser = async () => {
       try {
-        setLoading(true);
-        const userData = await userService.getUserById(userId);
-        
-        // Convert roleCode if needed
-        if (userData.role && !userData.roleCode) {
-          userData.roleCode = [userData.role];
-        }
-        
-        setFormData(userData);
+        const data = await userService.getUserById(userId);
+        setFormData({
+          ...data,
+          id: userId
+        });
         setError(null);
-      } catch (err: any) {
-        console.error('Error fetching user:', err);
-        setError('Failed to load user data. ' + err.message);
+      } catch (err: unknown) {
+        console.error('Failed to fetch user:', err);
+        const error = err as Error;
+        setError('Không thể tải thông tin người dùng. ' + (error.message || 'Vui lòng thử lại sau.'));
       } finally {
         setLoading(false);
       }
-    }
+    };
 
-    if (userId) {
-      fetchUser();
-    }
+    fetchUser();
   }, [userId]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
-    if (name === 'roleCode') {
-      setFormData(prev => ({
-        ...prev,
-        roleCode: [value]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'status' ? parseInt(value) : value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
+    setSaving(true);
     setError(null);
 
     try {
-      // Don't send empty password when updating user
-      const userToSave = {...formData};
-      if (!userToSave.password || userToSave.password.trim() === '') {
-        delete userToSave.password;
-      }
-      
-      await userService.saveUser(userToSave);
-      alert('User updated successfully');
+      await userService.saveUser(formData);
       router.push('/admin/users');
-    } catch (err: any) {
-      console.error('Error updating user:', err);
-      setError(err.message || 'Failed to update user. Please try again.');
-    } finally {
-      setSubmitting(false);
+      router.refresh();
+    } catch (err: unknown) {
+      console.error('Failed to update user:', err);
+      const error = err as Error;
+      setError('Không thể cập nhật người dùng. ' + (error.message || 'Vui lòng thử lại sau.'));
+      setSaving(false);
     }
   };
 
@@ -98,118 +95,117 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Edit User</h1>
+        <h1 className="text-2xl font-bold">Chỉnh sửa người dùng: {formData.fullName}</h1>
         <Link
           href="/admin/users"
-          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition duration-300"
+          className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-300"
         >
-          Back to Users
+          Quay lại
         </Link>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        {error && (
-          <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+          <p>{error}</p>
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit}>
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username *
+              <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-1">
+                Tên đăng nhập <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                id="userName"
                 name="userName"
                 value={formData.userName}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password (leave blank to keep current)
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password || ''}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name *
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                Họ và tên <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                id="fullName"
                 name="fullName"
                 value={formData.fullName}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
+                id="email"
                 name="email"
-                value={formData.email || ''}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                Số điện thoại <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                id="phone"
                 name="phone"
-                value={formData.phone || ''}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                Vai trò <span className="text-red-500">*</span>
               </label>
               <select
-                name="roleCode"
-                value={formData.roleCode ? formData.roleCode[0] : formData.role || 'USER'}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                id="role"
+                name="role"
+                value={formData.role}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                required
               >
-                <option value="USER">User</option>
-                <option value="ADMIN">Admin</option>
-                <option value="MANAGER">Manager</option>
+                <option value="ADMIN">Quản trị viên</option>
+                <option value="STAFF">Nhân viên</option>
+                <option value="USER">Người dùng</option>
               </select>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                Trạng thái <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="address"
-                value={formData.address || ''}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              />
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value={1}>Hoạt động</option>
+                <option value={0}>Không hoạt động</option>
+              </select>
             </div>
           </div>
 
@@ -217,18 +213,16 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
             <button
               type="button"
               onClick={() => router.push('/admin/users')}
-              className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition duration-300 mr-2"
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md mr-4 hover:bg-gray-400 transition duration-300"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className={`bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 ${
-                submitting ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
+              disabled={saving}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 disabled:opacity-50"
             >
-              {submitting ? 'Saving...' : 'Update User'}
+              {saving ? 'Đang lưu...' : 'Cập nhật người dùng'}
             </button>
           </div>
         </form>

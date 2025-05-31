@@ -4,6 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { userService, UserDTO } from '@/services/userService';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,9 +30,10 @@ export default function AdminUsersPage() {
       setUsers(data);
       setError(null);
       setSelectedUsers([]);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch users:', err);
-      setError('Failed to load users. Please try again later.');
+      const error = err as ApiError;
+      setError(error.response?.data?.message || error.message || 'Failed to load users. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -55,17 +65,18 @@ export default function AdminUsersPage() {
         await userService.deleteUsers(selectedUsers);
         alert('Users deleted successfully');
         fetchUsers();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to delete users:', err);
+        const error = err as ApiError;
         
         // Handle authentication errors
-        if (err.message && err.message.includes('Session expired')) {
+        if (error.message && error.message.includes('Session expired')) {
           alert('Your session has expired. You will be redirected to the login page.');
           window.location.href = '/login';
           return;
         }
         
-        alert('Failed to delete users. Please try again later.');
+        alert(error.response?.data?.message || error.message || 'Failed to delete users. Please try again later.');
       }
     }
   };
@@ -179,17 +190,18 @@ export default function AdminUsersPage() {
                                   alert('User deleted successfully');
                                   fetchUsers();
                                 })
-                                .catch((err: any) => {
+                                .catch((err: unknown) => {
                                   console.error('Failed to delete user:', err);
+                                  const error = err as ApiError;
                                   
                                   // Handle authentication errors
-                                  if (err.message && err.message.includes('Session expired')) {
+                                  if (error.message && error.message.includes('Session expired')) {
                                     alert('Your session has expired. You will be redirected to the login page.');
                                     window.location.href = '/login';
                                     return;
                                   }
                                   
-                                  alert('Failed to delete user');
+                                  alert(error.response?.data?.message || error.message || 'Failed to delete user');
                                 });
                             }
                           }}

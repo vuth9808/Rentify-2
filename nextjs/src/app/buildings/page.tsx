@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { buildingService, BuildingSearchResponse } from '@/services/buildingService';
+import { buildingService, BuildingSearchResponse, BuildingSearchRequest } from '@/services/buildingService';
 
 export default function BuildingsPage() {
   const [buildings, setBuildings] = useState<BuildingSearchResponse[]>([]);
@@ -16,30 +16,33 @@ export default function BuildingsPage() {
     rentPriceTo: '',
   });
 
-  useEffect(() => {
-    fetchBuildings();
-  }, []);
-
-  const fetchBuildings = async () => {
+  const fetchBuildings = useCallback(async () => {
     try {
       setLoading(true);
-      const params = {
-        name: searchParams.name || undefined,
-        district: searchParams.district || undefined,
-        rentPriceFrom: searchParams.rentPriceFrom ? parseInt(searchParams.rentPriceFrom) : undefined,
-        rentPriceTo: searchParams.rentPriceTo ? parseInt(searchParams.rentPriceTo) : undefined,
-      };
       
-      const data = await buildingService.getBuildings(params);
+      // Tạo đối tượng tìm kiếm từ searchParams
+      const searchRequest: BuildingSearchRequest = {};
+      
+      if (searchParams.name) searchRequest.name = searchParams.name;
+      if (searchParams.district) searchRequest.district = searchParams.district;
+      if (searchParams.rentPriceFrom) searchRequest.rentPriceFrom = Number(searchParams.rentPriceFrom);
+      if (searchParams.rentPriceTo) searchRequest.rentPriceTo = Number(searchParams.rentPriceTo);
+      
+      // Gọi service với tham số tìm kiếm
+      const data = await buildingService.getBuildings(searchRequest);
       setBuildings(data);
       setError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch buildings:', err);
-      setError('Failed to load buildings. Please try again later.');
+      setError('Failed to load properties. Please try again later.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchBuildings();
+  }, [fetchBuildings]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

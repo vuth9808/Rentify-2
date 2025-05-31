@@ -36,12 +36,6 @@ export default function Home() {
     return address.split(',').slice(0, 2).join(', ');
   };
 
-  // Function to get district from address
-  const getDistrict = (address: string) => {
-    const parts = address.split(',');
-    return parts.length > 2 ? parts[2].trim() : 'District 1';
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section with improved animation */}
@@ -324,7 +318,7 @@ export default function Home() {
                     </svg>
                   ))}
                 </div>
-                <p className="text-gray-600 italic mb-4">"{testimonial.quote}"</p>
+                <p className="text-gray-600 italic mb-4">&ldquo;{testimonial.quote}&rdquo;</p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
                   <div>

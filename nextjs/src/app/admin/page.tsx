@@ -65,7 +65,7 @@ export default function AdminDashboard() {
         setActivities(recentActivities);
         
         setError(null);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to fetch dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
       } finally {
@@ -75,18 +75,6 @@ export default function AdminDashboard() {
 
     fetchData();
   }, []);
-
-  // Format date function
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   // Prepare data for action type chart
   const prepareActionTypeChartData = () => {
@@ -199,12 +187,12 @@ export default function AdminDashboard() {
       }
     });
 
-    const sortedDates = Object.values(dailyData).sort((a: any, b: any) => 
+    const sortedDates = Object.values(dailyData).sort((a: DailyDataItem, b: DailyDataItem) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
     // Format dates for display (DD/MM)
-    const labels = sortedDates.map((item: any) => {
+    const labels = sortedDates.map((item: DailyDataItem) => {
       const date = new Date(item.date);
       return `${date.getDate()}/${date.getMonth() + 1}`;
     });
@@ -214,7 +202,7 @@ export default function AdminDashboard() {
       datasets: [
         {
           label: 'Activities per Day',
-          data: sortedDates.map((item: any) => item.count),
+          data: sortedDates.map((item: DailyDataItem) => item.count),
           borderColor: 'rgba(75, 192, 192, 1)',
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
           tension: 0.1,

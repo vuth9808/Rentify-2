@@ -66,7 +66,7 @@ export const userService = {
     try {
       const response = await api.get('/api/user');
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using mock user data');
       return mockUsers;
     }
@@ -77,7 +77,7 @@ export const userService = {
     try {
       const response = await api.get(`/api/user/${id}`);
       return response.data;
-    } catch (error) {
+    } catch {
       // Return mock user if API fails
       const user = mockUsers.find(u => u.id === id);
       if (!user) throw new Error('User not found');
@@ -124,7 +124,7 @@ export const userService = {
     try {
       const response = await api.put(`/api/user/profile/${userName}`, profileData);
       return response.data;
-    } catch (error) {
+    } catch  {
       // If server update fails, still return the updated local data
       return {
         userName: userName,
@@ -148,7 +148,7 @@ export const userService = {
     try {
       const response = await api.put(`/api/user/change-password/${userId}`, passwordData);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Password change failed');
     }
   },
@@ -158,7 +158,7 @@ export const userService = {
     try {
       const response = await api.post('/api/user', user);
       return response.data;
-    } catch (error) {
+    } catch {
       // Mock successful save for demo/development
       console.log('Using mock save since API call failed');
       return {
@@ -173,7 +173,7 @@ export const userService = {
     try {
       const response = await api.delete(`/api/user/${ids.join(',')}`);
       return response.data;
-    } catch (error) {
+    } catch {
       // Mock successful delete for demo/development
       console.log('Using mock delete since API call failed');
       return { message: 'Users deleted successfully' };
@@ -221,7 +221,7 @@ export const userService = {
     try {
       const response = await api.post('/api/auth/register', user);
       return response.data;
-    } catch (error) {
+    } catch  {
       console.log('Using mock register since API call failed');
       // Mock successful registration
       return {

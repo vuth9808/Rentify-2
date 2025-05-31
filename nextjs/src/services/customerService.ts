@@ -46,6 +46,11 @@ export interface ContactMessage {
   subject?: string;
 }
 
+export interface CustomerStaffAssignmentDTO {
+  customerId: number;
+  staffIds: number[];
+}
+
 // Hàm lấy dữ liệu từ localStorage hoặc dùng dữ liệu mẫu nếu chưa có
 const getStoredCustomers = (): CustomerSearchResponse[] => {
   const storedCustomers = localStorage.getItem('rentify_customers');
@@ -110,7 +115,7 @@ export const customerService = {
     try {
       const response = await api.get('/api/customer', { params: searchParams });
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using local storage for customer data');
       
       // Lấy dữ liệu từ localStorage
@@ -144,7 +149,7 @@ export const customerService = {
     try {
       const response = await api.get(`/api/customer/${id}`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using local storage for customer details');
       
       const customers = getStoredCustomers();
@@ -171,7 +176,7 @@ export const customerService = {
     try {
       const response = await api.post('/api/customer', customer);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using local storage for customer save operation');
       
       const customers = getStoredCustomers();
@@ -221,8 +226,8 @@ export const customerService = {
           email: customer.email,
           demand: customer.demand || '',
           requirement: customer.requirement || '',
-        status: customer.status || 'LEAD'
-      };
+          status: customer.status || 'LEAD'
+        };
         
         // Thêm vào danh sách và lưu lại
         customers.push(newCustomer);
@@ -247,7 +252,7 @@ export const customerService = {
     try {
       const response = await api.delete(`/api/customer/${ids.join(',')}`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using local storage for customer delete operation');
       
       const customers = getStoredCustomers();
@@ -283,18 +288,18 @@ export const customerService = {
     try {
       const response = await api.get(`/api/customer/${id}/staffs`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using mock customer staff data since API call failed');
       return [];
     }
   },
 
   // Assign staff to a customer
-  assignStaffToCustomer: async (assignmentDTO: any) => {
+  assignStaffToCustomer: async (assignmentDTO: CustomerStaffAssignmentDTO) => {
     try {
       const response = await api.put('/api/customer/customer-assignment', assignmentDTO);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using mock assignment since API call failed');
       return { success: true };
     }
@@ -305,7 +310,7 @@ export const customerService = {
     try {
       const response = await api.post('/api/customer/transaction-type', transactionType);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using mock transaction type since API call failed');
       return {
         ...transactionType,
@@ -319,7 +324,7 @@ export const customerService = {
     try {
       const response = await api.get(`/api/customer/${id}/transaction-detail`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using mock transaction detail since API call failed');
       return [];
     }
@@ -330,7 +335,7 @@ export const customerService = {
     try {
       const response = await api.post('/lien-he', contactMessage);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using local storage for contact message');
       
       // Lưu tin nhắn vào localStorage để xem sau

@@ -5,10 +5,24 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { buildingService, BuildingDTO } from '@/services/buildingService';
 
-export default function EditBuildingPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default function EditBuildingPage({ params }: PageProps) {
   const router = useRouter();
-  const buildingId = parseInt(params.id);
+  const [buildingId, setBuildingId] = useState<number>(0);
   
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setBuildingId(parseInt(resolvedParams.id));
+    };
+    getParams();
+  }, [params]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +48,8 @@ export default function EditBuildingPage({ params }: { params: { id: string } })
   });
 
   useEffect(() => {
+    if (buildingId === 0) return;
+
     const fetchBuilding = async () => {
       try {
         const data = await buildingService.getBuildingById(buildingId);
@@ -44,9 +60,10 @@ export default function EditBuildingPage({ params }: { params: { id: string } })
           brokerageFee: data.brokerageFee?.toString() || '',
         });
         setError(null);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to fetch building:', err);
-        setError('Không thể tải thông tin tòa nhà. Vui lòng thử lại sau.');
+        const error = err as Error;
+        setError('Không thể tải thông tin tòa nhà. ' + (error.message || 'Vui lòng thử lại sau.'));
       } finally {
         setLoading(false);
       }
@@ -83,9 +100,10 @@ export default function EditBuildingPage({ params }: { params: { id: string } })
       await buildingService.saveBuilding(buildingToSave);
       router.push('/admin/buildings');
       router.refresh();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to update building:', err);
-      setError('Không thể cập nhật tòa nhà. Vui lòng thử lại sau.');
+      const error = err as Error;
+      setError('Không thể cập nhật tòa nhà. ' + (error.message || 'Vui lòng thử lại sau.'));
       setSaving(false);
     }
   };

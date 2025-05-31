@@ -20,24 +20,13 @@ export default function AdminActivitiesPage() {
       const data = await activityService.getRecentActivities();
       setActivities(data);
       setError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch activities:', err);
-      setError('Failed to load activities. Please try again later.');
+      const error = err as Error;
+      setError('Failed to load activities. ' + (error.message || 'Please try again later.'));
     } finally {
       setLoading(false);
     }
-  };
-
-  // Format date function
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   // Lọc hoạt động theo loại

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function AboutPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -143,9 +144,9 @@ export default function AboutPage() {
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
               Join thousands of satisfied users who have found their ideal property with Rentify.
             </p>
-            <a href="/properties" className="bg-white text-blue-900 px-8 py-3 rounded-md font-medium hover:bg-blue-50 transition duration-300 inline-block">
+            <Link href="/properties" className="bg-white text-blue-900 px-8 py-3 rounded-md font-medium hover:bg-blue-50 transition duration-300 inline-block">
               Explore Properties
-            </a>
+            </Link>
           </div>
         </div>
       </div>

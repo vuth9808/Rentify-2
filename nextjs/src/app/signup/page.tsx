@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userService } from '@/services/userService';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -62,9 +71,10 @@ export default function SignupPage() {
       } else {
         setError('Failed to register. Please try again later.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registration error:', err);
-      setError(err.response?.data?.message || 'Failed to register. Please try again later.');
+      const error = err as ApiError;
+      setError(error.response?.data?.message || error.message || 'Failed to register. Please try again later.');
     } finally {
       setLoading(false);
     }

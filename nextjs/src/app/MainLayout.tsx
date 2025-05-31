@@ -55,13 +55,13 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <a href="/" className="text-2xl font-bold text-blue-900">Rentify</a>
+              <Link href="/" className="text-2xl font-bold text-blue-900">Rentify</Link>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <a href="/" className="font-medium text-gray-700 hover:text-blue-900">Home</a>
-              <a href="/properties" className="font-medium text-gray-700 hover:text-blue-900">Properties</a>
-              <a href="/about" className="font-medium text-gray-700 hover:text-blue-900">About</a>
-              <a href="/contact" className="font-medium text-gray-700 hover:text-blue-900">Contact</a>
+              <Link href="/" className="font-medium text-gray-700 hover:text-blue-900">Home</Link>
+              <Link href="/properties" className="font-medium text-gray-700 hover:text-blue-900">Properties</Link>
+              <Link href="/about" className="font-medium text-gray-700 hover:text-blue-900">About</Link>
+              <Link href="/contact" className="font-medium text-gray-700 hover:text-blue-900">Contact</Link>
             </nav>
             <div className="hidden md:flex items-center space-x-4">
               {isLoggedIn ? (
@@ -81,9 +81,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                      <a href="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                      <Link href="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</Link>
                       {userName === 'admin' && (
-                        <a href="/admin" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                        <Link href="/admin" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Admin Dashboard</Link>
                       )}
                       <button 
                         onClick={handleLogout}
@@ -96,10 +96,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </div>
               ) : (
                 <>
-                  <a href="/login" className="font-medium text-gray-700 hover:text-blue-900">Log In</a>
-                  <a href="/signup" className="bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 transition duration-300">
+                  <Link href="/login" className="font-medium text-gray-700 hover:text-blue-900">Log In</Link>
+                  <Link href="/signup" className="bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 transition duration-300">
                     Sign Up
-                  </a>
+                  </Link>
                 </>
               )}
             </div>
@@ -117,10 +117,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           {isMobileMenuOpen && (
             <div className="md:hidden mt-4 pt-4 border-t border-gray-200">
               <nav className="flex flex-col space-y-3">
-                <a href="/" className="font-medium text-gray-700 hover:text-blue-900 py-2">Home</a>
-                <a href="/properties" className="font-medium text-gray-700 hover:text-blue-900 py-2">Properties</a>
-                <a href="/about" className="font-medium text-gray-700 hover:text-blue-900 py-2">About</a>
-                <a href="/contact" className="font-medium text-gray-700 hover:text-blue-900 py-2">Contact</a>
+                <Link href="/" className="font-medium text-gray-700 hover:text-blue-900 py-2">Home</Link>
+                <Link href="/properties" className="font-medium text-gray-700 hover:text-blue-900 py-2">Properties</Link>
+                <Link href="/about" className="font-medium text-gray-700 hover:text-blue-900 py-2">About</Link>
+                <Link href="/contact" className="font-medium text-gray-700 hover:text-blue-900 py-2">Contact</Link>
                 
                 {isLoggedIn ? (
                   <>
@@ -132,9 +132,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                         <span>{userName}</span>
                       </div>
                       <div className="flex flex-col space-y-3 pl-10">
-                        <a href="/profile" className="text-gray-700 hover:text-blue-900">Profile</a>
+                        <Link href="/profile" className="text-gray-700 hover:text-blue-900">Profile</Link>
                         {userName === 'admin' && (
-                          <a href="/admin" className="text-gray-700 hover:text-blue-900">Admin Dashboard</a>
+                          <Link href="/admin" className="text-gray-700 hover:text-blue-900">Admin Dashboard</Link>
                         )}
                         <button 
                           onClick={handleLogout}
@@ -147,10 +147,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   </>
                 ) : (
                   <div className="flex flex-col space-y-3 border-t border-gray-200 pt-3">
-                    <a href="/login" className="font-medium text-gray-700 hover:text-blue-900">Log In</a>
-                    <a href="/signup" className="bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 transition duration-300 inline-block text-center">
+                    <Link href="/login" className="font-medium text-gray-700 hover:text-blue-900">Log In</Link>
+                    <Link href="/signup" className="bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 transition duration-300 inline-block text-center">
                       Sign Up
-                    </a>
+                    </Link>
                   </div>
                 )}
               </nav>
@@ -171,10 +171,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <div>
               <h4 className="font-bold mb-4">Quick Links</h4>
               <ul className="space-y-2">
-                <li><a href="/" className="text-gray-400 hover:text-white">Home</a></li>
-                <li><a href="/properties" className="text-gray-400 hover:text-white">Properties</a></li>
-                <li><a href="/about" className="text-gray-400 hover:text-white">About Us</a></li>
-                <li><a href="/contact" className="text-gray-400 hover:text-white">Contact</a></li>
+                <li><Link href="/" className="text-gray-400 hover:text-white">Home</Link></li>
+                <li><Link href="/properties" className="text-gray-400 hover:text-white">Properties</Link></li>
+                <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
+                <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
               </ul>
             </div>
             <div>

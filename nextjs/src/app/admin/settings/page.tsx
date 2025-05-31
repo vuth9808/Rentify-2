@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react';
 import { userService, ProfileUpdateDTO, PasswordChangeDTO } from '@/services/userService';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
   const [loading, setLoading] = useState(false);
@@ -74,9 +83,10 @@ export default function AdminSettingsPage() {
       await userService.updateProfile(profileData);
       setSuccess('Profile updated successfully');
       fetchCurrentUser(); // Refresh user data
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating profile:', err);
-      setError(err.message || 'Failed to update profile. Please try again.');
+      const error = err as ApiError;
+      setError(error.response?.data?.message || error.message || 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -95,9 +105,10 @@ export default function AdminSettingsPage() {
         currentPassword: '',
         newPassword: ''
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error changing password:', err);
-      setError(err.message || 'Failed to change password. Please try again.');
+      const error = err as ApiError;
+      setError(error.response?.data?.message || error.message || 'Failed to change password. Please try again.');
     } finally {
       setLoading(false);
     }

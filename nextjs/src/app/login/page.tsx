@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userService } from '@/services/userService';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
@@ -35,9 +44,10 @@ export default function LoginPage() {
       } else {
         setError('Invalid response from server');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      const error = err as ApiError;
+      setError(error.response?.data?.message || error.message || 'Failed to login. Please check your credentials.');
     } finally {
       setLoading(false);
     }

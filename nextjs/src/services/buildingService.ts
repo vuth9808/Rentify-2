@@ -50,6 +50,11 @@ export interface BuildingSearchResponse {
   brokerageFee: number;
 }
 
+export interface BuildingStaffAssignmentDTO {
+  buildingId: number;
+  staffIds: number[];
+}
+
 // Hàm lấy dữ liệu từ localStorage hoặc dùng dữ liệu mẫu nếu chưa có
 const getStoredBuildings = (): BuildingSearchResponse[] => {
   const storedBuildings = localStorage.getItem('rentify_buildings');
@@ -120,7 +125,7 @@ export const buildingService = {
     try {
       const response = await api.get('/api/building', { params: searchParams });
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using local storage data for buildings');
       
       // Lấy dữ liệu từ localStorage
@@ -185,7 +190,7 @@ export const buildingService = {
     try {
       const response = await api.get(`/api/building/${id}`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using local storage data for building details');
       
       const buildings = getStoredBuildings();
@@ -230,7 +235,7 @@ export const buildingService = {
       
       const response = await api.post('/api/building', transformedBuilding);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using local storage for building save operation');
       
       const buildings = getStoredBuildings();
@@ -324,9 +329,9 @@ export const buildingService = {
       const idString = ids.join(',');
       const response = await api.delete(`/api/building/${idString}`);
       return response.data;
-    } catch (error: any) {
+    } catch (err: unknown) {
       // Check if the error is due to redirection to login (authentication issue)
-      if (error.response && error.response.status === 405 && error.config.url.includes('/login')) {
+      if (err instanceof Error && err.message.includes('Session expired')) {
         // Token might be invalid or expired
         localStorage.removeItem('token');
         throw new Error('Session expired. Please log in again.');
@@ -367,7 +372,7 @@ export const buildingService = {
     try {
       const response = await api.get(`/api/building/${id}/staffs`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using mock building staff data');
       return [
         { id: 1, fullName: 'Staff One', checked: true },
@@ -378,11 +383,11 @@ export const buildingService = {
   },
 
   // Assign staff to a building
-  assignStaffToBuilding: async (assignmentDTO: any) => {
+  assignStaffToBuilding: async (assignmentDTO: BuildingStaffAssignmentDTO) => {
     try {
       const response = await api.post('/api/building/assigment', assignmentDTO);
       return response.data;
-    } catch (error) {
+    } catch {
       console.log('Using mock assignment since API call failed');
       return { success: true };
     }
